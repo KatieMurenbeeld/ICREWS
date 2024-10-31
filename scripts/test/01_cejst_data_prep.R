@@ -4,11 +4,22 @@ library(terra)
 library(tigris)
 library(stringr)
 library(RCurl)
-
-# Some files are large so set the timeout to 100 minutes (6000 seconds)
+# Set timeout to 10 minutes
 options(timeout=6000)
 
-# There are three file types we will download: csv, shp, and tif/img.
+# Create a new subdirectory for the data in the data/original directory
+data_dir <- here::here("data/original/")
+sub_dir <- "cejst"
+
+# check if sub directory exists 
+if (file.exists(sub_dir)){
+  
+} else {
+  
+  # create a new sub directory inside
+  # the data directory
+  dir.create(file.path(data_dir, sub_dir))
+}
 
 # update this to detect .zip in the file name as well
 download_data <- function(url, file_name) {
@@ -29,6 +40,5 @@ download_data <- function(url, file_name) {
 url <- "https://static-data-screeningtool.geoplatform.gov/data-versions/1.0/data/score/downloadable/1.0-shapefile-codebook.zip"
 file_name <- ""
 
-download_data(url, file_name)
 
 
