@@ -21,6 +21,7 @@ if (file.exists(sub_dir)){
   dir.create(file.path(data_dir, sub_dir))
 }
 
+# download and unzip the data into the new subdirectory (for next time)
 # update this to detect .zip in the file name as well
 download_data <- function(url, file_name) {
   if (str_detect(url, ".zip")) {
