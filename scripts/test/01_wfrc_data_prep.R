@@ -57,6 +57,12 @@ agg_fire <- function(ogrst, fac, res){
   return(fnames.process) 
 }
 
+fnames_list <- list.files(here::here("data/original/wfrc"), full.names = TRUE)
+
 for (rst in fnames_list) {
   agg_fire(rst, 100, "3km")
 }
+
+
+test_rast <- rast(here::here("data/processed/WHP_ID_id_3km_2024-12-02.tif"))
+plot(test_rast)
