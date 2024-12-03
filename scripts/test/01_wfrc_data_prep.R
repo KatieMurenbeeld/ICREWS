@@ -51,7 +51,7 @@ for (data in data_list) {
 # Aggregate to 3km (3000m, fact = 100) 
 agg_fire <- function(ogrst, fac, res){
   rasters <- rast(ogrst)
-  fnames.process <- paste0("data/processed/",names(rasters), "_id_", res, "_", Sys.Date(), ".tif")
+  fnames.process <- paste0("data/processed/wfrc_", names(rasters), "_", res, "_", Sys.Date(), ".tif")
   rasters.agg <- aggregate(rasters, fact=fac, cores = 2)
   writeRaster(rasters.agg, fnames.process, overwrite=TRUE)
   return(fnames.process) 
@@ -64,5 +64,5 @@ for (rst in fnames_list) {
 }
 
 
-test_rast <- rast(here::here("data/processed/WHP_ID_id_3km_2024-12-02.tif"))
+test_rast <- rast(here::here("data/processed/wfrc_RPS_ID_3km_2024-12-03.tif"))
 plot(test_rast)
