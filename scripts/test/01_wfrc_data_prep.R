@@ -64,5 +64,5 @@ for (rst in fnames_list) {
 }
 
 
-test_rast <- rast(here::here("data/processed/wfrc_RPS_ID_3km_2024-12-03.tif"))
+test_rast <- rast(here::here("data/processed/wfrc_BP_ID_3km_2024-12-03.tif"))
 plot(test_rast)
