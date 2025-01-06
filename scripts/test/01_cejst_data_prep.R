@@ -41,7 +41,7 @@ download_data <- function(url, file_name) {
 }
 
 # Climate and Economic Justice Screening Tool
-url <- "https://static-data-screeningtool.geoplatform.gov/data-versions/1.0/data/score/downloadable/1.0-shapefile-codebook.zip"
+url <- "https://static-data-screeningtool.geoplatform.gov/data-versions/2.0/data/score/downloadable/2.0-shapefile-codebook.zip"
 file_name <- ""
 
 # NOTE TO SELF: Need to fix the download data function
