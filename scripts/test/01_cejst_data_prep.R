@@ -57,7 +57,7 @@ filt_cejst <- cejst %>%
 
 ## Select variables: less high school, housing burden, energy burden, and PM2.5
 cejst_vars <- filt_cejst %>% 
-  dplyr::select(geometry, HSEF, HBF_PFS, EBF_PFS, PM25F_PFS)
+  dplyr::select(geometry, HSEF, HBF_PFS, EBF_PFS, PM25F_PFS, EALR_PFS)
 
 ## check for validity, remove empty geometries, and reproject 
 if (!all(st_is_valid(cejst_vars)))
@@ -131,4 +131,13 @@ plot(pm25_crop)
 writeRaster(pm25_crop, here::here(paste0("data/processed/cejst_pm25_id_3km_pred_crop_", 
                                             Sys.Date(), ".tif")), overwrite = TRUE)
 
+# Expected agricultural loss rate 
+ealr.preds <- idw_preds(cejst_vars_proj, templateRas, "EALR_PFS", grd)
+plot(ealr.preds$orig.rst)
+ealr_crop <- crop(ealr.preds$pred.rst, cejst_vars_proj, mask = TRUE)
+plot(ealr_crop)
+writeRaster(ealr_crop, here::here(paste0("data/processed/cejst_ealr_id_3km_pred_crop_", 
+                                         Sys.Date(), ".tif")), overwrite = TRUE)
 
+#test_rst <- raster(here::here("data/processed/cejst_ealr_id_3km_pred_crop_2025-01-06.tif"))
+#test_rst
