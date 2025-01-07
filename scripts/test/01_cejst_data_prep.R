@@ -71,18 +71,31 @@ projection <- "epsg:5070"
 cejst_vars_proj <- cejst_vars %>%
   st_transform(projection)
 
+## Load county boundaries from tigris
+### Set the year to account for changes to FIPS codes
+counties_2020 <- tigris::counties(year = 2020) 
+### Filter for Idaho (FIPS = 16)
+counties_2020 <- counties_2020 %>%
+  filter(STATEFP == 16) %>%
+  dplyr::select(GEOID, geometry)
+
+counties_2020 <- st_transform(counties_2020, projection)
+
 ## Create a template raster for the shapefiles
-XMIN <- ext(cejst_vars_proj)$xmin
-XMAX <- ext(cejst_vars_proj)$xmax
-YMIN <- ext(cejst_vars_proj)$ymin
-YMAX <- ext(cejst_vars_proj)$ymax
+# use the Wildfire data as the reference raster
+ref_rast <- rast(here::here("data/processed/wfrc_BP_ID_3km_2024-12-03.tif"))
+
+XMIN <- ext(ref_rast)$xmin
+XMAX <- ext(ref_rast)$xmax
+YMIN <- ext(ref_rast)$ymin
+YMAX <- ext(ref_rast)$ymax
 aspectRatio <- (YMAX-YMIN)/(XMAX-XMIN)
 cellSize <- 3000
 NCOLS <- as.integer((XMAX-XMIN)/cellSize)
 NROWS <- as.integer(NCOLS * aspectRatio)
 templateRas <- rast(ncol=NCOLS, nrow=NROWS, 
                     xmin=XMIN, xmax=XMAX, ymin=YMIN, ymax=YMAX,
-                    vals=1, crs=crs(cejst_vars_proj))
+                    vals=1, crs=crs(ref_rast))
 
 grd <- st_as_stars(templateRas)
 
@@ -102,40 +115,46 @@ idw_preds <- function(data_proj, ref_raster, lay, empty_grid){
 lesshs.preds <- idw_preds(cejst_vars_proj, templateRas, "HSEF", grd)
 plot(lesshs.preds$orig.rst)
 plot(lesshs.preds$pred.rst)
-lesshs_crop <- crop(lesshs.preds$pred.rst, cejst_vars_proj, mask = TRUE)
+lesshs_crop <- crop(lesshs.preds$pred.rst, ref_rast, mask = TRUE)
 plot(lesshs_crop)
+#nrow(as.data.frame(lesshs_crop))
+#nrow(as.data.frame(ref_rast))
 writeRaster(x = lesshs_crop, here::here(paste0("data/processed/cejst_lesshs_id_3km_pred_crop_", 
                                                           Sys.Date(), ".tif")), overwrite = TRUE)
 
 # Housing burden 
 hsburd.preds <- idw_preds(cejst_vars_proj, templateRas, "HBF_PFS", grd)
 plot(hsburd.preds$orig.rst)
-houseburd_crop <- crop(hsburd.preds$pred.rst, cejst_vars_proj, mask = TRUE)
+houseburd_crop <- crop(hsburd.preds$pred.rst, ref_rast, mask = TRUE)
 plot(houseburd_crop)
+nrow(as.data.frame(houseburd_crop))
 writeRaster(houseburd_crop, here::here(paste0("data/processed/cejst_hsbrd_id_3km_pred_crop_", 
                                            Sys.Date(), ".tif")), overwrite = TRUE)
 
 # Energy burden 
 engburd.preds <- idw_preds(cejst_vars_proj, templateRas, "EBF_PFS", grd)
 plot(engburd.preds$orig.rst)
-engburd_crop <- crop(engburd.preds$pred.rst, cejst_vars_proj, mask = TRUE)
+engburd_crop <- crop(engburd.preds$pred.rst, ref_rast, mask = TRUE)
 plot(engburd_crop)
+nrow(as.data.frame(engburd_crop))
 writeRaster(engburd_crop, here::here(paste0("data/processed/cejst_engbrd_id_3km_pred_crop_", 
                                               Sys.Date(), ".tif")), overwrite = TRUE)
 
 # PM2.5 exposure 
 pm25.preds <- idw_preds(cejst_vars_proj, templateRas, "PM25F_PFS", grd)
 plot(pm25.preds$orig.rst)
-pm25_crop <- crop(pm25.preds$pred.rst, cejst_vars_proj, mask = TRUE)
+pm25_crop <- crop(pm25.preds$pred.rst, ref_rast, mask = TRUE)
 plot(pm25_crop)
+nrow(as.data.frame(pm25_crop))
 writeRaster(pm25_crop, here::here(paste0("data/processed/cejst_pm25_id_3km_pred_crop_", 
                                             Sys.Date(), ".tif")), overwrite = TRUE)
 
 # Expected agricultural loss rate 
 ealr.preds <- idw_preds(cejst_vars_proj, templateRas, "EALR_PFS", grd)
 plot(ealr.preds$orig.rst)
-ealr_crop <- crop(ealr.preds$pred.rst, cejst_vars_proj, mask = TRUE)
+ealr_crop <- crop(ealr.preds$pred.rst, ref_rast, mask = TRUE)
 plot(ealr_crop)
+nrow(as.data.frame(ealr_crop))
 writeRaster(ealr_crop, here::here(paste0("data/processed/cejst_ealr_id_3km_pred_crop_", 
                                          Sys.Date(), ".tif")), overwrite = TRUE)
 

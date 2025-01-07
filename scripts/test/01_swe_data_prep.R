@@ -21,35 +21,12 @@ plot(swe_rst)
 projection <- "epsg:5070"
 swe_proj <- project(swe_rst, projection)
 
-# download the idaho state boundary and create a tempalte raster
-## Load county boundaries from tigris
-### Set the year to account for changes to FIPS codes
-counties <- tigris::counties() 
-### Filter for Idaho (FIPS = 16)
-counties <- counties %>%
-  filter(STATEFP == 16) %>%
-  dplyr::select(GEOID, geometry)
-
-counties <- st_transform(counties, projection)
-
-## Create a template raster for the shapefiles
-XMIN <- ext(counties)$xmin
-XMAX <- ext(counties)$xmax
-YMIN <- ext(counties)$ymin
-YMAX <- ext(counties)$ymax
-aspectRatio <- (YMAX-YMIN)/(XMAX-XMIN)
-cellSize <- 3000
-NCOLS <- as.integer((XMAX-XMIN)/cellSize)
-NROWS <- as.integer(NCOLS * aspectRatio)
-templateRas <- rast(ncol=NCOLS, nrow=NROWS, 
-                    xmin=XMIN, xmax=XMAX, ymin=YMIN, ymax=YMAX,
-                    vals=1, crs=crs(counties))
-
-grd <- st_as_stars(templateRas)
-
-swe_rst_resamp <- resample(swe_proj, templateRas)
-swe_crop <- crop(swe_rst_resamp, counties, mask = TRUE)
+# Resample to Idaho using the wildfire raster as a reference raster
+ref_rast <- rast(here::here("data/processed/wfrc_BP_ID_3km_2024-12-03.tif"))
+swe_rst_resamp <- resample(swe_proj, ref_rast)
+swe_crop <- crop(swe_rst_resamp, ref_rast, mask = TRUE)
 plot(swe_crop)
+nrow(as.data.frame(swe_crop))
 
 # save the raster file
 writeRaster(swe_crop, here::here(paste0("data/processed/swe_ann_max_id_3km_crop_", 

@@ -95,12 +95,20 @@ nwpv_dist_rast <- terra::distance(nw_pv_rast)
 # Convert to km
 nwpv_dist_rast$dist_to_photovoltaic_km <- nwpv_dist_rast$layer / 1000
 
-# Crop to Idaho
-id_pv_dist_rast <- crop(nwpv_dist_rast, id_bdry, mask = TRUE)
+# Resample to Idaho using the wildfire raster as a reference raster
+ref_rast <- rast(here::here("data/processed/wfrc_BP_ID_3km_2024-12-03.tif"))
+
+id_pv_dist_rast <- resample(nwpv_dist_rast, ref_rast)
 plot(id_pv_dist_rast$dist_to_photovoltaic_km)
 
+# Crop to Idaho using the reference raster
+id_pv_dist_crop <- crop(id_pv_dist_rast, ref_rast, mask = TRUE)
+plot(id_pv_dist_crop$dist_to_photovoltaic_km)
+nrow(as.data.frame(id_pv_dist_crop$dist_to_photovoltaic_km))
+nrow(as.data.frame(ref_rast))
+
 # Save the raster
-writeRaster(id_pv_dist_rast$dist_to_photovoltaic_km, here::here(paste0("data/processed/dist_to_photovoltaic_id_3km_pred_crop_", 
+writeRaster(id_pv_dist_crop$dist_to_photovoltaic_km, here::here(paste0("data/processed/dist_to_photovoltaic_id_3km_pred_crop_", 
                                          Sys.Date(), ".tif")), overwrite = TRUE)
 
 

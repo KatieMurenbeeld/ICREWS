@@ -88,12 +88,17 @@ nwpp_dist_rast <- terra::distance(nw_pp_rast)
 # Convert to km
 nwpp_dist_rast$dist_to_powerplant_km <- nwpp_dist_rast$last / 1000
 
+# Resample to Idaho using the wildfire raster as a reference raster
+ref_rast <- rast(here::here("data/processed/wfrc_BP_ID_3km_2024-12-03.tif"))
+id_pp_dist_rast <- resample(nwpp_dist_rast, ref_rast)
+
 # Crop to Idaho
-id_pp_dist_rast <- crop(nwpp_dist_rast, id_bdry, mask = TRUE)
-plot(id_pp_dist_rast$dist_to_powerplant_km)
+id_pp_dist_crop <- crop(id_pp_dist_rast, ref_rast, mask = TRUE)
+plot(id_pp_dist_crop$dist_to_powerplant_km)
+nrow(as.data.frame(id_pp_dist_crop$dist_to_powerplant_km))
 
 # Save the raster
-writeRaster(id_pp_dist_rast$dist_to_powerplant_km, here::here(paste0("data/processed/dist_to_powerplant_id_3km_pred_crop_", 
+writeRaster(id_pp_dist_crop$dist_to_powerplant_km, here::here(paste0("data/processed/dist_to_powerplant_id_3km_pred_crop_", 
                                          Sys.Date(), ".tif")), overwrite = TRUE)
 
 

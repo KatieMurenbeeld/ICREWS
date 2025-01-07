@@ -95,12 +95,17 @@ nwwt_dist_rast <- terra::distance(nw_wt_rast)
 # Convert to km
 nwwt_dist_rast$dist_to_windturbine_km <- nwwt_dist_rast$last / 1000
 
+# Resample to Idaho using the wildfire raster as a reference raster
+ref_rast <- rast(here::here("data/processed/wfrc_BP_ID_3km_2024-12-03.tif"))
+id_wt_dist_rast <- resample(nwwt_dist_rast, ref_rast)
+
 # Crop to Idaho
-id_wt_dist_rast <- crop(nwwt_dist_rast, id_bdry, mask = TRUE)
-plot(id_wt_dist_rast$dist_to_windturbine_km)
+id_wt_dist_crop <- crop(id_wt_dist_rast, ref_rast, mask = TRUE)
+plot(id_wt_dist_crop$dist_to_windturbine_km)
+nrow(as.data.frame(id_wt_dist_crop$dist_to_windturbine_km))
 
 # Save the raster
-writeRaster(id_wt_dist_rast$dist_to_windturbine_km, here::here(paste0("data/processed/dist_to_windturbine_id_3km_pred_crop_", 
+writeRaster(id_wt_dist_crop$dist_to_windturbine_km, here::here(paste0("data/processed/dist_to_windturbine_id_3km_pred_crop_", 
                                          Sys.Date(), ".tif")), overwrite = TRUE)
 
 

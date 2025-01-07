@@ -76,29 +76,21 @@ counties <- counties %>%
 
 counties <- st_transform(counties, projection)
 
-## Create a template raster for the shapefiles
-XMIN <- ext(counties)$xmin
-XMAX <- ext(counties)$xmax
-YMIN <- ext(counties)$ymin
-YMAX <- ext(counties)$ymax
-aspectRatio <- (YMAX-YMIN)/(XMAX-XMIN)
-cellSize <- 3000
-NCOLS <- as.integer((XMAX-XMIN)/cellSize)
-NROWS <- as.integer(NCOLS * aspectRatio)
-templateRas <- rast(ncol=NCOLS, nrow=NROWS, 
-                    xmin=XMIN, xmax=XMAX, ymin=YMIN, ymax=YMAX,
-                    vals=1, crs=crs(counties))
+# use the Wildfire data as the reference raster
+ref_rast <- rast(here::here("data/processed/wfrc_BP_ID_3km_2024-12-03.tif"))
 
 # Rasterize the critical habitat areas shapefile
-crithab_rast <- rasterize(vect(crithab_proj), templateRas)
+crithab_rast <- rasterize(vect(crithab_proj), ref_rast)
 
 # Calculate the distance from critical habitat areas
 crithab_dist_rast <- terra::distance(crithab_rast)
 
 # Crop to the reference raster and update variable names
-crithab_dist_crop <- crop(crithab_dist_rast, counties, mask = TRUE)
+crithab_dist_crop <- crop(crithab_dist_rast, ref_rast, mask = TRUE)
 plot(crithab_dist_crop)
 names(crithab_dist_crop) <- "distance_to_crithab_m"
+nrow(as.data.frame(crithab_dist_crop))
+nrow(as.data.frame(ref_rast))
 
 # Save the raster
 writeRaster(crithab_dist_crop, here::here(paste0("data/processed/crithab_dist_id_3km_pred_crop_", 

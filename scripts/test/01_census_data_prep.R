@@ -42,6 +42,7 @@ counties_2023 <- tigris::counties(year = 2023)
 counties_2023 <- counties_2023 %>%
   filter(STATEFP == 16) %>%
   dplyr::select(GEOID, geometry)
+counties_2023 <- st_transform(counties_2023, projection)
 
 ## Net and ave change in population and % change in migration (rate?), using census data
 delpop_cen <- del_pop_cen %>% 
@@ -78,28 +79,38 @@ delpop_proj <- delpop_county %>%
   st_transform(projection)
 
 ## Create a template raster for the shapefiles
-XMIN <- ext(delpop_proj)$xmin
-XMAX <- ext(delpop_proj)$xmax
-YMIN <- ext(delpop_proj)$ymin
-YMAX <- ext(delpop_proj)$ymax
+# use the Wildfire data as the reference raster
+ref_rast <- rast(here::here("data/processed/wfrc_BP_ID_3km_2024-12-03.tif"))
+
+XMIN <- ext(ref_rast)$xmin
+XMAX <- ext(ref_rast)$xmax
+YMIN <- ext(ref_rast)$ymin
+YMAX <- ext(ref_rast)$ymax
 aspectRatio <- (YMAX-YMIN)/(XMAX-XMIN)
 cellSize <- 3000
 NCOLS <- as.integer((XMAX-XMIN)/cellSize)
 NROWS <- as.integer(NCOLS * aspectRatio)
 templateRas <- rast(ncol=NCOLS, nrow=NROWS, 
                     xmin=XMIN, xmax=XMAX, ymin=YMIN, ymax=YMAX,
-                    vals=1, crs=crs(delpop_proj))
+                    vals=1, crs=crs(ref_rast))
 
 grd <- st_as_stars(templateRas)
 
 # Rasterize the Net migration 2022 data using the templateRas as the reference raster
-delpop.rst <- rasterize(delpop_proj, templateRas, field = "NETMIG2022", fun = "mean")
+delpop.rst <- rasterize(delpop_proj, ref_rast, field = "NETMIG2022", fun = "mean")
+nrow(as.data.frame(delpop.rst))
+
+# Fill NAs with focal
+delpop_fill <- focal(delpop.rst, 3, mean, na.policy='only', na.rm = TRUE)
+plot(delpop_fill)
+nrow(as.data.frame(delpop_crop_fill))
 
 # Crop to reference raster
-delpop_crop <- crop(delpop.rst, delpop_proj, mask = TRUE)
-plot(delpop_crop)
+delpop_fill_crop <- crop(delpop_fill, ref_rast, mask = TRUE)
+plot(delpop_fill_crop)
+nrow(as.data.frame(delpop_fill_crop))
 
 # Save raster 
-writeRaster(delpop_crop, here::here(paste0("data/processed/net_mig_2023_id_3km_crop_", 
+writeRaster(delpop_fill_crop, here::here(paste0("data/processed/net_mig_2023_id_3km_crop_", 
                                 Sys.Date(), ".tif")))
 

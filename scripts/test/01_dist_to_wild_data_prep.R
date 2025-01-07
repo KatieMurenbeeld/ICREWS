@@ -76,29 +76,21 @@ counties <- counties %>%
 
 counties <- st_transform(counties, projection)
 
-## Create a template raster for the shapefiles
-XMIN <- ext(counties)$xmin
-XMAX <- ext(counties)$xmax
-YMIN <- ext(counties)$ymin
-YMAX <- ext(counties)$ymax
-aspectRatio <- (YMAX-YMIN)/(XMAX-XMIN)
-cellSize <- 3000
-NCOLS <- as.integer((XMAX-XMIN)/cellSize)
-NROWS <- as.integer(NCOLS * aspectRatio)
-templateRas <- rast(ncol=NCOLS, nrow=NROWS, 
-                    xmin=XMIN, xmax=XMAX, ymin=YMIN, ymax=YMAX,
-                    vals=1, crs=crs(counties))
+# use the Wildfire data as the reference raster
+ref_rast <- rast(here::here("data/processed/wfrc_BP_ID_3km_2024-12-03.tif"))
 
 # Rasterize the critical habitat areas shapefile
-wild_rast <- rasterize(vect(wild_proj), templateRas)
+wild_rast <- rasterize(vect(wild_proj), ref_rast)
 
 # Calculate the distance from critical habitat areas
 wild_dist_rast <- terra::distance(wild_rast)
 
 # Crop to the reference raster and update variable names
-wild_dist_crop <- crop(wild_dist_rast, counties, mask = TRUE)
+wild_dist_crop <- crop(wild_dist_rast, ref_rast, mask = TRUE)
 plot(wild_dist_crop)
 names(wild_dist_crop) <- "distance_to_wilderness_m"
+nrow(as.data.frame(wild_dist_crop))
+nrow(as.data.frame(ref_rast))
 
 # Save the raster
 writeRaster(wild_dist_crop, here::here(paste0("data/processed/wildarea_dist_id_3km_pred_crop_", 
