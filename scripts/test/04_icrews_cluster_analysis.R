@@ -31,7 +31,7 @@ GFCM_result_k3 <- GCMeans(dataset, k = 3, m = 1.8, standardize = FALSE,
                           verbose = TRUE, init = "kpp")
 
 saveRDS(GFCM_result_k3, here::here(paste0("outputs/models/gfcm_mod_k3_",
-                                           Sys.Date(), "rds")))
+                                           Sys.Date(), ".rds")))
 
 map_GFCM_result_k3 <- rast(GFCM_result_k3$rasters)
 plot(map_GFCM_result_k3[["Groups"]])
@@ -46,7 +46,7 @@ SGFCM_result_k8 <- SGFCMeans(dataset, k = 8, m = 1.9, standardize = FALSE,
                                  seed = 456, tol = 0.001, verbose = TRUE, init = "kpp")
 
 saveRDS(SGFCM_result_k8, here::here(paste0("outputs/models/sgfcm_mod_k8_",
-                                               Sys.Date(), "rds")))
+                                               Sys.Date(), ".rds")))
 
 map_SGFCM_result_k8 <- rast(SGFCM_result_k8$rasters)
 plot(map_SGFCM_result_k8[["Groups"]])
