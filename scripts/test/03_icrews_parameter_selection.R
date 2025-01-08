@@ -218,6 +218,8 @@ ggplot(SGFCMvalues_k3) +
   scale_fill_viridis() +
   coord_fixed(ratio=1)
 
+# k = 3, m = 1.8, w = 5x5, alpha = 1.7, beta = 0.1, SI = 0.41, XB = 636.37
+
 # k = 8
 SGFCMvalues_k8 <- select_parameters.mc(algo = "SGFCM", data = dataset,
                                        k = 8, m = 1.9,
@@ -246,3 +248,5 @@ ggplot(SGFCMvalues_k8) +
   geom_text(aes(x = alpha, y = beta, label = round(XieBeni.index,2)), size = 2.5)+
   scale_fill_viridis() +
   coord_fixed(ratio=1)
+
+# k = 8, m = 1.8, w = 5x5, alpha = 1.6, beta = 0.2, SI = 0.48, XB = 271.43
