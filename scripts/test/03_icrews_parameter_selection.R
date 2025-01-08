@@ -75,7 +75,7 @@ ggplot(GFCMvalues_k3) +
   scale_fill_viridis() +
   coord_fixed(ratio=1)
 
-# k = 3, m = 1.8, beta = 0.7, SI = 0.45, XB = 0.79
+# k = 3, m = 1.8, beta = 0.7, SI = 0.45, XB = 0.79 ## best with k = 3
 
 # k = 8
 GFCMvalues_k8 <- select_parameters.mc(algo = "GFCM", data = dataset, seed = 6891,
@@ -249,4 +249,5 @@ ggplot(SGFCMvalues_k8) +
   scale_fill_viridis() +
   coord_fixed(ratio=1)
 
-# k = 8, m = 1.8, w = 5x5, alpha = 1.6, beta = 0.2, SI = 0.48, XB = 271.43
+# k = 8, m = 1.8, w = 5x5, alpha = 1.6, beta = 0.2, SI = 0.48, XB = 271.43 
+## best with k = 8
