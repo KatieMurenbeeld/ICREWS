@@ -12,7 +12,7 @@ library(ggdist)
 library(ggsci)
 library(tigris)
 library(forcats)
-
+library(MetBrewer)
 #----Load the data----
 rst_sc <- rast(here::here("data/processed/rast_stack_all_attributes_scaled_2025-01-07.tif"))
 rst <- rast(here::here("data/processed/rast_stack_all_attributes_2025-01-07.tif"))
@@ -118,7 +118,9 @@ overlap <- k8_long_df %>%
 
 k8_long_join <- k8_long_df %>% 
   left_join(overlap) %>% 
-  filter(overlap == FALSE)
+  filter(overlap == FALSE) # use when looking at all archetypes
+  #mutate(value = case_when(overlap == TRUE ~ 0,
+  #                         overlap == FALSE ~ value)) # use mutate for individual arches
 
 # reorder the variables
  k8_long_overlap_reorder <- k8_long_join %>% 
@@ -164,12 +166,16 @@ k8_long_overlap_reorder_newnames <- k8_long_overlap_reorder_newnames %>%
                                     "dist. to solar fields"
   ))
 
+idv_arch <- k8_long_overlap_reorder_newnames %>%
+  filter(groups_k8 == "A8")
+
 k8_iqr_no_overlap <- ggplot(data=k8_long_overlap_reorder_newnames, mapping = aes(x=new_var_name, y=value, fill=sets)) +
   geom_boxplot(outliers = FALSE, coef=0) +
   geom_hline(yintercept = 0, linetype=2) +
   scale_fill_met_d("Kandinsky")+
   coord_flip()+
   theme_bw()+
+  theme(axis.title.x = element_blank(), axis.title.y = element_blank()) +
   facet_wrap(vars(groups_k8), ncol = 4)
 
 k8_iqr_no_overlap
