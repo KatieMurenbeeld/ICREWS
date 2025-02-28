@@ -2,6 +2,7 @@ library(tidyverse)
 library(terra)
 library(sf)
 library(sp)
+library(nngeo)
 library(ggplot2)
 library(patchwork)
 library(geocmeans)
@@ -13,6 +14,7 @@ library(ggdist)
 library(ggsci)
 library(tigris)
 library(MetBrewer)
+library(cowplot)
 
 
 #---set the projection----
@@ -82,33 +84,10 @@ boise_msa <- metro_proj %>%
   filter(GEOID == "14260")
 
 tva_proj <- st_transform(tva, projection)
-tva_test <- st_make_valid(tva_proj)
-tva_union <- st_union(tva_test)
-tva_combine <- st_combine(tva_test)
+tva_valid <- st_make_valid(tva_proj)
+tva_combine <- st_combine(tva_valid)
 tva_comb_union <- st_union(tva_combine, by_feature = TRUE)
-tva_union_sf <- st_as_sf(tva_union)
-union2 <- st_union(tva_union_sf)
-plot(union2)
-tva_box <- bb_poly(st_bbox(tva_test))
-tva_box2 <- bb_poly(st_bbox(tva_test))
-
-test_nngeo <- st_as_sf(st_remove_holes(tva_comb_union)) # this worked, need nngeo library
-plot(test_nngeo$x)
-
-
-test_extr_poly <- st_collection_extract(tva_test, type = "POLYGON")
-test_expoly_union <- st_union(test_extr_poly)
-plot(test_expoly_union)
-test_diff <- st_difference(tva_box, tva_union)
-test_diff2 <- st_difference(tva_box, test_diff)
-#test_diff3 <- st_difference(tva_box, tva_combine)
-plot(tva_box)
-#plot(test_diff3, add = TRUE, col = "red")
-plot(test_diff, add = TRUE, col = "blue")
-plot(test_diff2, add = TRUE, col = "yellow")
-
-plot(test_diff2)
-tva_combine <- st_as_sf(st_combine(tva_test))
+tva_noholes <- st_as_sf(st_remove_holes(tva_comb_union)) 
 
 watershed_proj <- st_transform(watershed, projection)
 watershed_proj <- watershed_proj %>% 
@@ -128,6 +107,7 @@ rivers_crop <- st_intersection(rivers_proj, id_bdry, mask = TRUE)
 
 urban_crop <- st_intersection(urban_proj, id_bdry, mask = TRUE)
 
+tva_crop <- st_intersection(tva_noholes, id_bdry, mask = TRUE)
 ## Create a map of the clusters with watersheds, rivers, and locations
 # k = 8
 
@@ -146,7 +126,7 @@ k8_map <- ggplot() +
   geom_sf(data = id_bdry, fill = NA, color = "black", linewidth = 2) +
   geom_sf(data = res_crop, fill = NA, color = "darkgrey", linewidth = 1.5) +
   geom_sf(data = cities_proj, color = "darkgrey", size = 7) +
-  geom_sf(data = tva_union, fill = NA, color = "red") +
+  geom_sf(data = tva_noholes, fill = NA, color = "darkgrey", linewidth = 1.5) +
   #geom_sf(data = urban_crop, fill = "red") + 
   #scale_fill_brewer(palette = "Set2") +
   #scale_fill_met_d("Cross") +
@@ -174,11 +154,60 @@ sho_ban <- res_crop %>%
 cda <- res_crop %>%
   filter(AIANNHCE == "0705")
 
+
 k8_map + 
   coord_sf(xlim = sf::st_bbox(cda)[c(1,3)],
            ylim = sf::st_bbox(cda)[c(2,4)],
            expand = FALSE
   )
 
+k8_map2 <- ggplot() +
+  geom_raster(aes(x = sgfcm.k8.df$x, y = sgfcm.k8.df$y, fill = as.factor(sgfcm.k8.df$Groups)), alpha = 0.8) +
+  #geom_sf(data = rivers_crop, fill = NA, color = "skyblue", linewidth = 1.5) +
+  #geom_sf(data = watershed_crop, fill = NA, color = "maroon", linewidth = 1.5) +
+  #geom_sf(data = id_bdry, fill = NA, color = "black", linewidth = 2) +
+  #geom_sf(data = res_crop, fill = NA, color = "darkgrey", linewidth = 1.5) +
+  #geom_sf(data = cities_proj, color = "darkgrey", size = 7) +
+  #geom_sf(data = tva_noholes, fill = NA, color = "darkgrey", linewidth = 1.5) +
+  #geom_sf(data = urban_crop, fill = "red") +
+  geom_rect(aes(xmin = st_bbox(cda)[[1]], ymin = st_bbox(cda)[[2]], xmax = st_bbox(cda)[[3]], ymax = st_bbox(cda)[[4]]),
+            fill = NA, color = "black", linewidth = 0.6) +
+  geom_rect(aes(xmin = st_bbox(sho_ban)[[1]], ymin = st_bbox(sho_ban)[[2]], xmax = st_bbox(sho_ban)[[3]], ymax = st_bbox(sho_ban)[[4]]),
+            fill = NA, color = "black", linewidth = 0.6) +
+  geom_rect(aes(xmin = st_bbox(tva_noholes)[[1]], ymin = st_bbox(tva_noholes)[[2]], xmax = st_bbox(tva_noholes)[[3]], ymax = st_bbox(tva_noholes)[[4]]),
+            fill = NA, color = "black", linewidth = 0.6) +
+  #scale_fill_brewer(palette = "Set2") +
+  #scale_fill_met_d("Cross") +
+  scale_fill_met_d("Ingres") +
+  labs(#title = "SGFMeans Clusters for Idaho:",
+    #subtitle = "k=8, m=1.9, alpha = 0.5, beta = 0.4, window = 3x3", 
+    fill = "Archetypes") +
+  #ggtitle(wrapper("SGFMeans Clusters for Idaho", width = 18)) +
+  theme_bw() + 
+  theme(text = element_text(size = 16),
+        legend.position = "bottom",
+        axis.title.x = element_blank(), 
+        axis.title.y = element_blank(),
+        axis.text = element_blank(),
+        plot.margin=unit(c(0.5, 0.5, 0.5, 0.5),"mm"))
 
+k8_map2
+
+ggdraw(k8_map2) +
+  draw_plot(
+    {
+      k8_map2 + 
+        coord_sf(
+          xlim = sf::st_bbox(cda)[c(1,3)],
+          ylim = sf::st_bbox(cda)[c(2,4)],
+          expand = FALSE) +
+        theme(legend.position = "none")
+    },
+    # The distance along a (0,1) x-axis to draw the left edge of the plot
+    x = 0.58, 
+    # The distance along a (0,1) y-axis to draw the bottom edge of the plot
+    y = 0,
+    # The width and height of the plot expressed as proportion of the entire ggdraw object
+    width = 0.46, 
+    height = 0.46)
 
