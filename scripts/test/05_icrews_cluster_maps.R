@@ -14,6 +14,10 @@ library(ggsci)
 library(tigris)
 library(MetBrewer)
 
+
+#---set the projection----
+projection = "epsg:5070"
+
 #----Load the data----
 #gfcm_k3_result <- rast(here::here("outputs/models/gfcm_result_k3_2025-01-08.tif"))
 sgfcm_k8_result <- rast(here::here("outputs/models/sgfcm_result_k8_2025-01-08.tif"))
@@ -49,13 +53,19 @@ cities <- st_as_sf(cities_df,
 
 plot(cities$geometry)
 
+### metro areas (for Treasure Valley i.e. Boise Metropolitan Area (MSA))
+metro <- tigris::core_based_statistical_areas(year = 2020)
+
+### treasure valley 
+# https://data-idwr.hub.arcgis.com/datasets/2015-irrigated-lands-for-the-treasure-valley-hand-digitized-generated/explore?location=43.621887%2C-116.473674%2C8.44
+tva <- read_sf(here::here("data/original/2015__Irrigated_Lands_for_the_Treasure_Valley/2015__Irrigated_Lands_for_the_Treasure_Valley.shp"))
+
 ### Idaho water data
 #url <- "https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHD/State/Shape/NHD_H_Idaho_State_Shape.zip"
 watershed <- read_sf(here::here("data/original/water/NHD_H_Idaho_State_Shape (1)/Shape/WBDHU4.shp"))
 rivers <- read_sf(here::here("data/original/water/NHD_H_Idaho_State_Shape (1)/Shape/NHDFlowline_0.shp"))
 
 ## Reproject the shapes to NAD83 and filter for Idaho
-projection <- "epsg: 5070"
 
 res_proj <- st_transform(res, projection)
 res_proj <- res_proj %>%
@@ -66,6 +76,39 @@ urban_proj <- urban_proj %>%
   filter(GEOID10 == "89245" | GEOID10 == "08785")
 
 cities_proj <- st_transform(cities, projection)
+
+metro_proj <- st_transform(metro, projection)
+boise_msa <- metro_proj %>%
+  filter(GEOID == "14260")
+
+tva_proj <- st_transform(tva, projection)
+tva_test <- st_make_valid(tva_proj)
+tva_union <- st_union(tva_test)
+tva_combine <- st_combine(tva_test)
+tva_comb_union <- st_union(tva_combine, by_feature = TRUE)
+tva_union_sf <- st_as_sf(tva_union)
+union2 <- st_union(tva_union_sf)
+plot(union2)
+tva_box <- bb_poly(st_bbox(tva_test))
+tva_box2 <- bb_poly(st_bbox(tva_test))
+
+test_nngeo <- st_as_sf(st_remove_holes(tva_comb_union)) # this worked, need nngeo library
+plot(test_nngeo$x)
+
+
+test_extr_poly <- st_collection_extract(tva_test, type = "POLYGON")
+test_expoly_union <- st_union(test_extr_poly)
+plot(test_expoly_union)
+test_diff <- st_difference(tva_box, tva_union)
+test_diff2 <- st_difference(tva_box, test_diff)
+#test_diff3 <- st_difference(tva_box, tva_combine)
+plot(tva_box)
+#plot(test_diff3, add = TRUE, col = "red")
+plot(test_diff, add = TRUE, col = "blue")
+plot(test_diff2, add = TRUE, col = "yellow")
+
+plot(test_diff2)
+tva_combine <- st_as_sf(st_combine(tva_test))
 
 watershed_proj <- st_transform(watershed, projection)
 watershed_proj <- watershed_proj %>% 
@@ -103,7 +146,8 @@ k8_map <- ggplot() +
   geom_sf(data = id_bdry, fill = NA, color = "black", linewidth = 2) +
   geom_sf(data = res_crop, fill = NA, color = "darkgrey", linewidth = 1.5) +
   geom_sf(data = cities_proj, color = "darkgrey", size = 7) +
-  #geom_sf(data = urban_crop, fill = "darkgrey") + 
+  geom_sf(data = tva_union, fill = NA, color = "red") +
+  #geom_sf(data = urban_crop, fill = "red") + 
   #scale_fill_brewer(palette = "Set2") +
   #scale_fill_met_d("Cross") +
   scale_fill_met_d("Ingres") +
@@ -119,5 +163,22 @@ k8_map <- ggplot() +
         plot.margin=unit(c(0.5, 0.5, 0.5, 0.5),"mm"))
 
 k8_map
-ggsave(here::here(paste0("outputs/figures/sgfcm_k8_map_", Sys.Date(), ".png")), 
-       plot = k8_map, width = 12, height = 12, dpi = 300)
+#ggsave(here::here(paste0("outputs/figures/sgfcm_k8_map_", Sys.Date(), ".png")), 
+#       plot = k8_map, width = 12, height = 12, dpi = 300)
+
+## Testing out inset maps
+# from https://upgo.lab.mcgill.ca/2019/12/13/making-beautiful-maps/
+
+sho_ban <- res_crop %>%
+  filter(AIANNHCE == "1185")
+cda <- res_crop %>%
+  filter(AIANNHCE == "0705")
+
+k8_map + 
+  coord_sf(xlim = sf::st_bbox(cda)[c(1,3)],
+           ylim = sf::st_bbox(cda)[c(2,4)],
+           expand = FALSE
+  )
+
+
+
