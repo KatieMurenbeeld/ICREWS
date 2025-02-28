@@ -162,13 +162,13 @@ k8_map +
   )
 
 k8_map2 <- ggplot() +
-  geom_raster(aes(x = sgfcm.k8.df$x, y = sgfcm.k8.df$y, fill = as.factor(sgfcm.k8.df$Groups)), alpha = 0.8) +
+  geom_raster(aes(x = sgfcm.k8.df$x, y = sgfcm.k8.df$y, fill = as.factor(sgfcm.k8.df$Groups)), alpha = 0.85) +
   #geom_sf(data = rivers_crop, fill = NA, color = "skyblue", linewidth = 1.5) +
   #geom_sf(data = watershed_crop, fill = NA, color = "maroon", linewidth = 1.5) +
   #geom_sf(data = id_bdry, fill = NA, color = "black", linewidth = 2) +
-  #geom_sf(data = res_crop, fill = NA, color = "darkgrey", linewidth = 1.5) +
+  geom_sf(data = res_crop, fill = NA, color = "darkgrey", linewidth = 1.5) +
   #geom_sf(data = cities_proj, color = "darkgrey", size = 7) +
-  #geom_sf(data = tva_noholes, fill = NA, color = "darkgrey", linewidth = 1.5) +
+  geom_sf(data = tva_noholes, fill = NA, color = "darkgrey", linewidth = 1.5) +
   #geom_sf(data = urban_crop, fill = "red") +
   geom_rect(aes(xmin = st_bbox(cda)[[1]], ymin = st_bbox(cda)[[2]], xmax = st_bbox(cda)[[3]], ymax = st_bbox(cda)[[4]]),
             fill = NA, color = "black", linewidth = 0.6) +
@@ -179,35 +179,55 @@ k8_map2 <- ggplot() +
   #scale_fill_brewer(palette = "Set2") +
   #scale_fill_met_d("Cross") +
   scale_fill_met_d("Ingres") +
-  labs(#title = "SGFMeans Clusters for Idaho:",
+  labs(title = "SGFMeans Clusters for Idaho:",
     #subtitle = "k=8, m=1.9, alpha = 0.5, beta = 0.4, window = 3x3", 
     fill = "Archetypes") +
-  #ggtitle(wrapper("SGFMeans Clusters for Idaho", width = 18)) +
+  ggtitle(wrapper("SGFMeans Clusters for Idaho", width = 18)) +
   theme_bw() + 
   theme(text = element_text(size = 16),
         legend.position = "bottom",
         axis.title.x = element_blank(), 
         axis.title.y = element_blank(),
         axis.text = element_blank(),
-        plot.margin=unit(c(0.5, 0.5, 0.5, 0.5),"mm"))
+        plot.margin=unit(c(0.05, 0.05, 0.05, 0.05),"mm"),
+        plot.background=element_rect(fill="white"))
 
 k8_map2
 
-ggdraw(k8_map2) +
+k8_map_insets <- k8_map2 %>%
+  ggdraw() +
   draw_plot(
-    {
-      k8_map2 + 
+    {k8_map2 + 
         coord_sf(
           xlim = sf::st_bbox(cda)[c(1,3)],
           ylim = sf::st_bbox(cda)[c(2,4)],
           expand = FALSE) +
-        theme(legend.position = "none")
-    },
-    # The distance along a (0,1) x-axis to draw the left edge of the plot
-    x = 0.58, 
-    # The distance along a (0,1) y-axis to draw the bottom edge of the plot
-    y = 0,
-    # The width and height of the plot expressed as proportion of the entire ggdraw object
-    width = 0.46, 
-    height = 0.46)
+        theme(legend.position = "none",
+              title = element_blank(), 
+              axis.ticks = element_blank())}, 
+    x = 0.00, y = 0.6, width = 0.3, height = 0.3) +
+  draw_plot(
+    {k8_map2 + 
+        coord_sf(
+          xlim = sf::st_bbox(sho_ban)[c(1,3)],
+          ylim = sf::st_bbox(sho_ban)[c(2,4)],
+          expand = FALSE) +
+        theme(legend.position = "none",
+              title = element_blank(), 
+              axis.ticks = element_blank())},
+    x = 0.7, y = 0.3, width = 0.3, height = 0.3) +
+  draw_plot(
+    {k8_map2 + 
+        coord_sf(
+          xlim = sf::st_bbox(tva_noholes)[c(1,3)],
+          ylim = sf::st_bbox(tva_noholes)[c(2,4)],
+          expand = FALSE) +
+        theme(legend.position = "none",
+              title = element_blank(), 
+              axis.ticks = element_blank())},
+    x = 0.00, y = 0.25, width = 0.3, height = 0.3) 
+  
 
+k8_map_insets
+ggsave(here::here(paste0("outputs/figures/draft_sgfcm_k8_map_w_insets_", Sys.Date(), ".png")), 
+       plot = k8_map_insets, width = 12, height = 12, dpi = 300, bg = "white")
