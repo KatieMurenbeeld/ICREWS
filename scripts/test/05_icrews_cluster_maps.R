@@ -53,7 +53,7 @@ cities <- st_as_sf(cities_df,
                    coords = c("longitude", "latitude"), 
                    crs = 4326)
 
-plot(cities$geometry)
+plot(cities$geometry, add = TRUE)
 
 ### metro areas (for Treasure Valley i.e. Boise Metropolitan Area (MSA))
 metro <- tigris::core_based_statistical_areas(year = 2020)
@@ -88,6 +88,10 @@ tva_valid <- st_make_valid(tva_proj)
 tva_combine <- st_combine(tva_valid)
 tva_comb_union <- st_union(tva_combine, by_feature = TRUE)
 tva_noholes <- st_as_sf(st_remove_holes(tva_comb_union)) 
+#plot(tva_noholes$x)
+#st_write(tva_noholes, here::here(paste0("data/processed/tva_outline_", Sys.Date(), ".shp")) ) # save the new shapefile
+#test_tva <- st_read(here::here("data/processed/tva_outline_2025-03-03.shp"))
+#plot(test_tva$geometry)
 
 watershed_proj <- st_transform(watershed, projection)
 watershed_proj <- watershed_proj %>% 
