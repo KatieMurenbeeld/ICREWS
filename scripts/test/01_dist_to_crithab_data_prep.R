@@ -45,7 +45,7 @@ download_data <- function(url, file_name) {
 url <- "https://ecos.fws.gov/docs/crithab/crithab_all/crithab_all_layers.zip"
 file_name <- ""
 
-# Still need toi fix so that it unzips to the new subdirectory
+# Still need to fix so that it unzips to the new subdirectory
 download_data(url, file_name)
 #unzip(here::here("data/original/usa.zip"), exdir = here::here("data/original/cejst/"))
 
