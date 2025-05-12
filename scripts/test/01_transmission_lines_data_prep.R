@@ -91,4 +91,6 @@ id_tl_dist_crop <- crop(id_tl_dist_rast, ref_rast, mask = TRUE)
 plot(id_tl_dist_crop$dist_to_transline_km)
 nrow(as.data.frame(id_tl_dist_crop$dist_to_transline_km))
 
-
+# Save the raster
+writeRaster(id_tl_dist_crop$dist_to_transline_km, here::here(paste0("data/processed/dist_to_transline_id_3km_pred_crop_", 
+                                                                     Sys.Date(), ".tif")), overwrite = TRUE)
