@@ -52,7 +52,7 @@ counties_2020 <- st_transform(counties_2020, projection)
 
 ## BRIC: select GEOID and community capital
 bric_2020 <- bric %>% # needs 2020 counties
-  dplyr::select("GEOID", "COMM CAPITAL", "SOCIAL") %>%
+  dplyr::select("GEOID", "COMM CAPITAL", "SOCIAL", "ECONOM", `HOUSING/INFRA`, "INSTITUTIONAL") %>%
   rename("FIPS" = "GEOID", 
          "COMM_CAP" = "COMM CAPITAL",
          "SOC_CAP" = "SOCIAL")
@@ -113,6 +113,30 @@ plot(bric.soc.rst)
 bric_soc_crop <- crop(bric.soc.rst$SOC_CAP, ref_rast, mask = TRUE)
 plot(bric_soc_crop)
 nrow(as.data.frame(bric_soc_crop))
+
+# rasterize the economic resilience
+bric.econ.rst <- rasterize(bric_proj, ref_rast, field = "ECONOM", fun = "mean")
+plot(bric.econ.rst)
+# crop to the bric county shapefile
+bric_econ_crop <- crop(bric.econ.rst$ECONOM, ref_rast, mask = TRUE)
+plot(bric_econ_crop)
+nrow(as.data.frame(bric_econ_crop))
+
+# rasterize the institutional resilience
+bric.insti.rst <- rasterize(bric_proj, ref_rast, field = "INSTITUTIONAL", fun = "mean")
+plot(bric.insti.rst)
+# crop to the bric county shapefile
+bric_insti_crop <- crop(bric.insti.rst$INSTITUTIONAL, ref_rast, mask = TRUE)
+plot(bric_insti_crop)
+nrow(as.data.frame(bric_insti_crop))
+
+# rasterize the infrastructure resilience
+bric.infra.rst <- rasterize(bric_proj, ref_rast, field = "HOUSING/INFRA", fun = "mean")
+plot(bric.infra.rst)
+# crop to the bric county shapefile
+bric_infra_crop <- crop(bric.infra.rst$`HOUSING/INFRA`, ref_rast, mask = TRUE)
+plot(bric_infra_crop)
+nrow(as.data.frame(bric_infra_crop))
 
 # save the rasters
 writeRaster(bric_comm_crop, here::here(paste0("data/processed/bric_commcap_id_3km_pred_crop_", 
