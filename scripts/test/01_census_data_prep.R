@@ -47,11 +47,15 @@ counties_2023 <- counties_2023 %>%
   dplyr::select(GEOID, geometry)
 counties_2023 <- st_transform(counties_2023, projection)
 
+counties_2023 <- counties_2023 %>%
+  mutate(county_area = st_area(counties_2023))
+
 ## Net and ave change in population and % change in migration (rate?), using census data
 delpop_cen <- del_pop_cen %>% 
   mutate(pct_mig_5yr = ((NPOPCHG2024 - NPOPCHG2020)/NPOPCHG2020) * 100,
-         ave_del_pop = ((NPOPCHG2020 + NPOPCHG2021 + NPOPCHG2022 + NPOPCHG2023 + NPOPCHG2024)/5)) %>%
-  dplyr::select(STATE, COUNTY, NPOPCHG2023, NETMIG2022, ave_del_pop, pct_mig_5yr)
+         ave_del_pop = ((NPOPCHG2020 + NPOPCHG2021 + NPOPCHG2022 + NPOPCHG2023 + NPOPCHG2024)/5),
+         ave_pop_5yr = ((POPESTIMATE2020 + POPESTIMATE2021 + POPESTIMATE2022 + POPESTIMATE2023 + POPESTIMATE2024)/5)) %>%
+  dplyr::select(STATE, COUNTY, NPOPCHG2023, NETMIG2022, ave_del_pop, pct_mig_5yr, ave_pop_5yr)
 
 delpop_cen <- delpop_cen %>%
   mutate(STATE = as.character(STATE), 
@@ -80,6 +84,9 @@ delpop_county <- delpop_county %>%
 
 delpop_proj <- delpop_county %>%
   st_transform(projection)
+
+## Calculate the county population density
+delpop_proj$density_km2 <- (delpop_proj$ave_pop_5yr / delpop_proj$county_area) * 1000 * 1000
 
 ## Create a template raster for the shapefiles
 # use the Wildfire data as the reference raster
@@ -127,10 +134,28 @@ avepop_fill_crop <- crop(avepop_fill, ref_rast, mask = TRUE)
 plot(avepop_fill_crop)
 nrow(as.data.frame(avepop_fill_crop))
 
+
+# Rasterize the ave population change from 2020-2024 data using the templateRas as the reference raster
+avepopdens.rst <- rasterize(delpop_proj, ref_rast, field = "density_km2", fun = "mean")
+nrow(as.data.frame(avepopdens.rst))
+
+# Fill NAs with focal
+avedens_fill <- focal(avepopdens.rst, 3, mean, na.policy='only', na.rm = TRUE)
+plot(avedens_fill)
+nrow(as.data.frame(avedens_fill))
+
+# Crop to reference raster
+avedens_fill_crop <- crop(avedens_fill, ref_rast, mask = TRUE)
+plot(avedens_fill_crop)
+nrow(as.data.frame(avedens_fill_crop))
+
 # Save rasters 
 writeRaster(delpop_fill_crop, here::here(paste0("data/processed/net_mig_2023_id_3km_crop_", 
                                 Sys.Date(), ".tif")))
 
 writeRaster(avepop_fill_crop, here::here(paste0("data/processed/ave_pop_change_2020_2024_id_3km_crop_", 
+                                                Sys.Date(), ".tif")))
+
+writeRaster(avedens_fill_crop, here::here(paste0("data/processed/ave_pop_densitykm2_2020_2024_id_3km_crop_", 
                                                 Sys.Date(), ".tif")))
 
