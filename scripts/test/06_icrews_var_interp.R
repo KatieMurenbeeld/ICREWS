@@ -175,7 +175,9 @@ k8_iqr_no_overlap <- ggplot(data=k8_long_overlap_reorder_newnames, mapping = aes
   scale_fill_met_d("Kandinsky")+
   coord_flip()+
   theme_bw()+
-  theme(axis.title.x = element_blank(), axis.title.y = element_blank()) +
+  theme(axis.title.x = element_blank(), axis.title.y = element_blank(),
+        text = element_text(size = 20),
+        legend.position = "right") +
   facet_wrap(vars(groups_k8), ncol = 4)
 
 k8_iqr_no_overlap
