@@ -3,13 +3,6 @@ library(raster)
 library(sf)
 library(terra)
 library(tigris)
-library(stringr)
-library(RCurl)
-library(stars)
-library(spdep)
-library(gstat)
-library(spatstat)
-library(raster)
 
 # Set timeout to 10 minutes
 options(timeout=6000)
