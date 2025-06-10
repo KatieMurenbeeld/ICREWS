@@ -75,9 +75,17 @@ id_wells_prod_rst <- rasterize(id_wells_productive, ref_rast_proj, fun="count", 
 id_wells_prod_rst_crop <- crop(id_wells_prod_rst, ref_rast_proj, mask = TRUE)
 plot(id_wells_prod_rst_crop)
 
+# wells with >0 production sum by production
+id_wells_productive <- id_wells_proj %>%
+  filter(Production > 0)
+id_wells_prod_sum_rst <- rasterize(id_wells_productive, ref_rast_proj, fun="sum", field = "Production", background=0)
+id_wells_prod_sum_rst_crop <- crop(id_wells_prod_sum_rst, ref_rast_proj, mask = TRUE)
+plot(id_wells_prod_sum_rst_crop)
+
 nrow(as.data.frame(ref_rast_proj))
 nrow(as.data.frame(id_wells_rst_crop))
 nrow(as.data.frame(id_wells_prod_rst_crop))
+nrow(as.data.frame(id_wells_prod_sum_rst_crop))
 
 length(unique(id_wells_proj$Owner))
 length(unique(id_wells_productive$Owner))
@@ -88,3 +96,11 @@ writeRaster(id_wells_rst_crop, here::here(paste0("data/processed/idwr_wells_all_
 
 writeRaster(id_wells_prod_rst_crop, here::here(paste0("data/processed/idwr_wells_productive_count_id_3km_crop_", 
                                               Sys.Date(), ".tif")), overwrite = TRUE)
+
+writeRaster(id_wells_prod_sum_rst_crop, here::here(paste0("data/processed/idwr_wells_production_sum_id_3km_crop_", 
+                                                      Sys.Date(), ".tif")), overwrite = TRUE)
+
+
+
+
+
