@@ -131,3 +131,26 @@ writeRaster(id_fed_name_rich_rst_crop, here::here(paste0("data/processed/fed_ric
                                                  Sys.Date(), ".tif")), overwrite = TRUE)
 
 
+#---% area fed----
+fed_type_union <- fed_proj_type %>%
+  st_union(.)
+
+id_fed_type_int <- st_intersection(id_cells_sf, fed_type_union)
+id_fed_type_int_area <- id_fed_type_int %>%
+  mutate(area = st_area(.)) %>%
+  mutate(percent_area = drop_units(area) / (3000*3000))
+
+id_fedtype_int_area_rst <- rasterize(id_fed_type_int_area, id_cells_rst, field = "percent_area")
+plot(id_fedtype_int_area_rst)
+id_fed_area_rst_resamp <- resample(id_fedtype_int_area_rst, ref_rast, method = "near")
+#plot(id_fed_name_rich_rst_resamp)
+
+id_fed_area_rst_resamp[is.na(id_fed_area_rst_resamp[])] <- 0 
+plot(id_fed_area_rst_resamp)
+
+id_fed_area_rst_crop <- crop(id_fed_area_rst_resamp, ref_rast, mask = TRUE)
+plot(id_fed_area_rst_crop)
+
+# Save the raster
+writeRaster(id_fed_area_rst_crop, here::here(paste0("data/processed/fed_area_id_3km_pred_crop_", 
+                                                         Sys.Date(), ".tif")), overwrite = TRUE)
