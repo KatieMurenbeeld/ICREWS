@@ -51,6 +51,8 @@ counties_2023 <- st_transform(counties_2023, projection)
 counties_2023 <- counties_2023 %>%
   mutate(county_area = st_area(counties_2023))
 
+counties_2023_proj <- st_transform(counties_2023, projection)
+
 ## test out using tidycensus
 
 census_api_key("0c67a04e1be4c76930c858ef2c307536f889aff3", install = TRUE)
@@ -139,10 +141,10 @@ id_25yo_edu
 # Median age is good to go
 
 # Median Age is good to go
-medage_county <- left_join(counties_2023, id_medage,
+medage_proj <- left_join(counties_2023_proj, id_medage,
                            by = "GEOID")
 # update the projection
-medage_proj <- st_transform(medage_county, projection)
+#medage_proj <- st_transform(medage_county, projection)
 
 # Rasterize using the reference raster
 medage.rst <- rasterize(medage_proj, ref_rast, field = "estimate", fun = "mean")
@@ -200,10 +202,68 @@ id_edu_wide <- id_edu_wide %>%
   mutate(pct_less_coll = ((select(., no_school:coll_more1yr_no_deg) %>% rowSums()) / total) * 100)
 
 
-id_edu_wide <- id_edu_wide %>%
-  mutate(pct_less_coll_test = ((no_school + nursery + kinder + grade_01 + grade_02 + grade_03 + grade_04 + grade_05 + grade_06 + grade_07 + grade_08 + grade_09 + grade_10 + grade_11 + grade_12_no_dip + hs_dip + ged + coll_less1yr + coll_more1yr_no_deg) / total) * 100) %>%
-  mutate(sum_less_coll_test = no_school + nursery + kinder + grade_01 + grade_02 + grade_03 + grade_04 + grade_05 + grade_06 + grade_07 + grade_08 + grade_09 + grade_10 + grade_11 + grade_12_no_dip + hs_dip + ged + coll_less1yr + coll_more1yr_no_deg)
+#id_edu_wide <- id_edu_wide %>%
+#  mutate(pct_less_coll_test = ((no_school + nursery + kinder + grade_01 + grade_02 + grade_03 + grade_04 + grade_05 + grade_06 + grade_07 + grade_08 + grade_09 + grade_10 + grade_11 + grade_12_no_dip + hs_dip + ged + coll_less1yr + coll_more1yr_no_deg) / total) * 100) %>%
+#  mutate(sum_less_coll_test = no_school + nursery + kinder + grade_01 + grade_02 + grade_03 + grade_04 + grade_05 + grade_06 + grade_07 + grade_08 + grade_09 + grade_10 + grade_11 + grade_12_no_dip + hs_dip + ged + coll_less1yr + coll_more1yr_no_deg)
 
+# Join to the county data
+id_elec_county <- left_join(counties_2023_proj, id_ele_wide,
+                            by = "GEOID")
+id_water_county <- left_join(counties_2023_proj, id_water_wide,
+                            by = "GEOID")
+id_edu_county <- left_join(counties_2023_proj, id_edu_wide,
+                           by = "GEOID")
+
+# Rasterize, fill NA, crop and save rasters
+
+# Rasterize using the reference raster
+id_elec.rst <- rasterize(id_elec_county, ref_rast, field = "pct_charged_more_250", fun = "mean")
+nrow(as.data.frame(id_elec.rst))
+
+id_water.rst <- rasterize(id_water_county, ref_rast, field = "pct_charged_more_1000", fun = "mean")
+nrow(as.data.frame(id_water.rst))
+
+id_edu.rst <- rasterize(id_edu_county, ref_rast, field = "pct_less_coll", fun = "mean")
+nrow(as.data.frame(id_edu.rst))
+
+# Fill NAs with focal
+id_elec_fill <- focal(id_elec.rst, 3, mean, na.policy='only', na.rm = TRUE)
+plot(id_elec_fill)
+nrow(as.data.frame(id_elec_fill))
+
+id_water_fill <- focal(id_water.rst, 3, mean, na.policy='only', na.rm = TRUE)
+plot(id_water_fill)
+nrow(as.data.frame(id_water_fill))
+
+id_edu_fill <- focal(id_edu.rst, 3, mean, na.policy='only', na.rm = TRUE)
+plot(id_edu_fill)
+nrow(as.data.frame(id_edu_fill))
+
+# Crop to reference raster
+id_elec_fill_crop <- crop(id_elec_fill, ref_rast, mask = TRUE)
+plot(id_elec_fill_crop)
+nrow(as.data.frame(ref_rast))
+nrow(as.data.frame(id_elec_fill_crop))
+
+id_water_fill_crop <- crop(id_water_fill, ref_rast, mask = TRUE)
+plot(id_water_fill_crop)
+nrow(as.data.frame(ref_rast))
+nrow(as.data.frame(id_water_fill_crop))
+
+id_edu_fill_crop <- crop(id_edu_fill, ref_rast, mask = TRUE)
+plot(id_edu_fill_crop)
+nrow(as.data.frame(ref_rast))
+nrow(as.data.frame(id_edu_fill_crop))
+
+# Save the raster
+writeRaster(id_elec_fill_crop, here::here(paste0("data/processed/pct_charged_more_250_month_electricity_2023_id_3km_crop_", 
+                                                Sys.Date(), ".tif")))
+
+writeRaster(id_water_fill_crop, here::here(paste0("data/processed/pct_charged_more_1000_year_water_sewer_2023_id_3km_crop_", 
+                                                 Sys.Date(), ".tif")))
+
+writeRaster(id_edu_fill_crop, here::here(paste0("data/processed/pct_over25yo_less_college_2023_id_3km_crop_", 
+                                                  Sys.Date(), ".tif")))
 
 
 
