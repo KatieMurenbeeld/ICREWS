@@ -41,6 +41,9 @@ nw_pp <- pplant %>%
                       "Oregon", "Nevada", "Utah", 
                       "Wyoming", "California"))
 
+id_pp <- pplant %>%
+  filter(State == "Idaho")
+plot(st_geometry(id_pp))
 # filter to exclude wind and solar
 ## Note: could update this list for specific plant types
 
@@ -102,3 +105,6 @@ writeRaster(id_pp_dist_crop$dist_to_powerplant_km, here::here(paste0("data/proce
                                          Sys.Date(), ".tif")), overwrite = TRUE)
 
 
+id_pp_count_rst <- rasterize(id_pp, ref_rast, fun="count", field = "OBJECTID", background=0)
+id_pp_crop <- crop(id_pp_count_rst, ref_rast, mask = TRUE)
+plot(id_pp_crop)
