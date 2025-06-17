@@ -9,6 +9,7 @@ library(stars)
 library(spdep)
 library(gstat)
 library(spatstat)
+library(raster)
 
 # Set timeout to 10 minutes
 options(timeout=6000)
@@ -71,34 +72,69 @@ id_bdry <- states_proj %>%
 ## get the boundary for states neighboring Idaho 
 ## we will use the NW states to calculate the distance to energy sources
 nw_states <- states_proj %>%
-  filter(STUSPS %in% c("ID", "WA", "MT", "OR", "NV", "UT", "WY", "CA"))
+  filter(STUSPS %in% c("ID", "WA", "MT", "OR", "NV", "UT", "WY"))
 
 # I need where the roads and NW states intersect
-nw_roads <- tigris::primary_secondary_roads(state = , year = "2023")
-#nw_roads <- st_intersection(roads_proj, nw_states) 
+id_roads <- tigris::primary_secondary_roads(state = "ID", year = "2023")
+wa_roads <- tigris::primary_secondary_roads(state = "WA", year = "2023")
+mt_roads <- tigris::primary_secondary_roads(state = "MT", year = "2023")
+or_roads <- tigris::primary_secondary_roads(state = "OR", year = "2023")
+nv_roads <- tigris::primary_secondary_roads(state = "NV", year = "2023")
+ut_roads <- tigris::primary_secondary_roads(state = "UT", year = "2023")
+wy_roads <- tigris::primary_secondary_roads(state = "WY", year = "2023")
+nw_roads <- rbind(id_roads, wa_roads, mt_roads, or_roads, nv_roads, ut_roads, wy_roads) 
+
+id_all_roads <- tigris::roads(state = "ID", county = "Ada County")
+id_all_roads_proj <- st_transform(id_all_roads, projection)
 
 gg <- ggplot()
-gg <- gg + geom_sf(data = nw_roads,
+gg <- gg + geom_sf(data = id_roads,
                    color="black", fill="white", size=0.25)
 gg
 
+test <- rbind(id_roads, wa_roads, mt_roads)
+
+gg2 <- ggplot()
+gg2 <- gg2 + geom_sf(data = nw_roads, 
+                     color = "black", fill = "white", size = 0.25)
+gg2
+
 # Create a template raster for the shapefiles
-XMIN <- ext(nw_states)$xmin
-XMAX <- ext(nw_states)$xmax
-YMIN <- ext(nw_states)$ymin
-YMAX <- ext(nw_states)$ymax
+XMIN <- ext(id_all_roads_proj)$xmin
+XMAX <- ext(id_all_roads_proj)$xmax
+YMIN <- ext(id_all_roads_proj)$ymin
+YMAX <- ext(id_all_roads_proj)$ymax
 aspectRatio <- (YMAX-YMIN)/(XMAX-XMIN)
 cellSize <- 3000
 NCOLS <- as.integer((XMAX-XMIN)/cellSize)
 NROWS <- as.integer(NCOLS * aspectRatio)
 templateRas <- rast(ncol=NCOLS, nrow=NROWS, 
                     xmin=XMIN, xmax=XMAX, ymin=YMIN, ymax=YMAX,
-                    vals=1, crs=crs(nw_states))
+                    vals=1, crs=crs(id_all_roads_proj))
 
-# Rasterize the roads shapefile
-nw_road_rast <- rasterize(vect(nw_roads$geometry), templateRas)
 
-# Calculate the distance from power plants
+# reproject the roads
+id_roads_proj <- st_transform(id_roads, projection)
+nw_roads_proj <- st_transform(nw_roads, projection)
+
+
+
+v <- vect(id_all_roads_proj)
+#v <- vect(nw_roads_proj)
+v
+plot(v)
+roads <- as.lines(v)
+roads
+plot(roads)
+road_rast <- rasterizeGeom(roads, templateRas, fun = "crosses", unit = "km")
+plot(road_rast)
+
+test_rast <- rasterize(vect(id_all_roads_proj), templateRas)
+#test_rast <- rasterize(vect(nw_roads_proj), templateRas)
+test_rast_dist <- terra::distance(test_rast)
+plot(test_rast_dist)
+
+# Calculate the distance from primary roads in the northwest
 nwrd_dist_rast <- terra::distance(nw_road_rast)
 
 
@@ -122,3 +158,15 @@ nwrl_dist_rast <- terra::distance(nw_rail_rast)
 plot(nwrl_dist_rast)
 
 psp_rail <- as.psp(nw_roads)
+
+
+
+library(terra)
+v <- vect(system.file("ex/lux.shp", package="terra"))
+v
+roads <- as.lines(v)
+roads
+plot(roads)
+rs <- rast(v)
+plot(rs)
+rs
