@@ -28,15 +28,18 @@ pet_rst_proj <- project(test_slice, projection)
 pet_rst_proj
 names(pet_rst_proj)
 
+tenyr_slice <- pet_rst["daily_mean_reference_evapotranspiration_grass"][[12785:16436]]
 
-m <- c(0, 3, 1,  3, 10, 0)
-rclmat <- matrix(m, ncol = 3, byrow = TRUE)
+pet_rst_proj <- project(tenyr_slice, projection)
+pet_rst_proj
+names(pet_rst_proj)
 
 r.pet <- brick(pet_rst_proj)
 r.pet
 plot(mean(r.pet))
 test_final <- rast(mean(r.pet))
 test_final
+plot(test_final)
 
 ref_rast <- rast(here::here("data/processed/wfrc_BP_ID_3km_2024-12-03.tif"))
 test_final_resamp <- resample(test_final, ref_rast)
@@ -47,7 +50,7 @@ nrow(as.data.frame(test_final_crop))
 nrow(as.data.frame(ref_rast))
 
 # save the raster file
-writeRaster(test_final_crop, here::here(paste0("data/processed/mod_drought_count_2014_2024_id_3km_crop_", 
+writeRaster(test_final_crop, here::here(paste0("data/processed/ret_mean_2014_2024_id_3km_crop_", 
                                         Sys.Date(), ".tif")), overwrite = TRUE)
 
 ### Notes for cleaning this up. 1) do I want 10 years of data? normally I look at around 5.
@@ -71,9 +74,9 @@ t <- as.Date(t, origin = "1900-01-01")
 head(lon) # look at the first few entries in the longitude vector
 tail(t)
 
-t[2483]
+t[12785]
 length(t)
-t[3213]
+t[16436]
 
 pdsi.array <- ncvar_get(nc_data, "category") # store the data in a 3-dimensional array
 dim(pdsi.array) 
