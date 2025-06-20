@@ -11,7 +11,8 @@ library(PerformanceAnalytics)
 options(scipen=999)
 
 #----Load the data----
-df <- as.data.frame(rast(here::here("data/processed/rast_stack_all_attributes_2025-01-07.tif")))
+#df <- as.data.frame(rast(here::here("data/processed/rast_stack_all_attributes_2025-01-07.tif")))
+df <- as.data.frame(rast(here::here("data/processed/rast_stack_02_all_attributes_2025-06-20.tif")))
 
 #---Get summary statistics for each variable----
 summ_df <- as.data.frame(summary(df))
@@ -38,19 +39,19 @@ df_corrplot <- ggcorrplot(df_corr, hc.order = TRUE, type = "lower", lab = TRUE) 
 
 df_corrplot
 
-ggsave(here::here(paste0("outputs/figures/icrews_attri_corrplot_", Sys.Date(), ".png")), 
-       plot = df_corrplot, width = 8, height = 8, dpi = 300)
+ggsave(here::here(paste0("outputs/figures/icrews_attri_corrplot_rast_stack_02_", Sys.Date(), ".png")), 
+       plot = df_corrplot, width = 20, height = 20, dpi = 300)
 
 #---Plot histograms of variables----
 df_melt <- melt(df)
 
 df_hist <- ggplot(df_melt ,aes(x = value)) + 
   facet_wrap(~variable,scales = "free_x") + 
-  geom_histogram()
+  geom_histogram(bins = 20)
 df_hist
 
-ggsave(here::here(paste0("outputs/figures/icrews_attri_hists_", Sys.Date(), ".png")), 
-       plot = df_hist, width = 7, height = 8, dpi = 300)
+ggsave(here::here(paste0("outputs/figures/icrews_attri_hists_rast_stack_02_", Sys.Date(), ".png")), 
+       plot = df_hist, width = 20, height = 20, dpi = 300)
 
 #---Scatter plots?---- 
 ## maybe I could make a figure like I did for my dissertation...
