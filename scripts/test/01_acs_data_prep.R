@@ -135,6 +135,19 @@ id_25yo_edu <- get_acs(geography = "county",
                          year = 2023)
 id_25yo_edu
 
+# test for % industry not in ag, forestry, hunting/fishing, and mining:
+# C24070
+
+id_industry <- get_acs(geography = "county", 
+                             variables = c(total = "C24070_001", 
+                                           ag = "C24070_002", 
+                                           man = "C24070_004",
+                                           ae = "C24070_012"), 
+                             state = "ID", 
+                             year = 2023)
+id_industry
+
+
 # Need to pivot all the tables wider so that each row is only one county?
 # Or do i want to calculate % education level (less highschool) and then pivot wider
 # Would need to do a loop and calculate for each GEOID
@@ -201,6 +214,23 @@ id_edu_wide <- id_edu_wide %>%
   mutate(sum_less_coll = select(., no_school:coll_more1yr_no_deg) %>% rowSums()) %>%
   mutate(pct_less_coll = ((select(., no_school:coll_more1yr_no_deg) %>% rowSums()) / total) * 100)
 
+# industry
+id_industry_wide <- id_industry %>%
+  pivot_wider(names_from = variable, values_from = estimate) %>%
+  select(-moe) %>%
+  select(-NAME) %>%
+  group_by(GEOID) %>%
+  summarise_if(is.numeric, sum, na.rm = TRUE)
+
+id_industry_wide <- id_industry_wide %>%
+  mutate(pct_ag = (ag / total) * 100) %>%
+  mutate(pct_ae = (ae / total) * 100) %>%
+  mutate(pct_man = (man / total) * 100) %>%
+  mutate(pct_all_other = 100 - pct_ag - pct_man - pct_ae) %>%
+  mutate(pct_non_ag = 100 - pct_ag) %>%
+  mutate(pct_non_man = 100 - pct_man) %>%
+  mutate(pct_ag_man = pct_man + pct_ag)
+
 
 #id_edu_wide <- id_edu_wide %>%
 #  mutate(pct_less_coll_test = ((no_school + nursery + kinder + grade_01 + grade_02 + grade_03 + grade_04 + grade_05 + grade_06 + grade_07 + grade_08 + grade_09 + grade_10 + grade_11 + grade_12_no_dip + hs_dip + ged + coll_less1yr + coll_more1yr_no_deg) / total) * 100) %>%
@@ -213,6 +243,8 @@ id_water_county <- left_join(counties_2023_proj, id_water_wide,
                             by = "GEOID")
 id_edu_county <- left_join(counties_2023_proj, id_edu_wide,
                            by = "GEOID")
+id_industry_county <- left_join(counties_2023_proj, id_industry_wide,
+                                by = "GEOID")
 
 # Rasterize, fill NA, crop and save rasters
 
@@ -226,6 +258,15 @@ nrow(as.data.frame(id_water.rst))
 id_edu.rst <- rasterize(id_edu_county, ref_rast, field = "pct_less_coll", fun = "mean")
 nrow(as.data.frame(id_edu.rst))
 
+id_pct_ag.rst <- rasterize(id_industry_county, ref_rast, field = "pct_ag", fun = "mean")
+nrow(as.data.frame(id_pct_ag.rst))
+
+id_pct_man.rst <- rasterize(id_industry_county, ref_rast, field = "pct_man", fun = "mean")
+nrow(as.data.frame(id_pct_man.rst))
+
+id_pct_ag_man.rst <- rasterize(id_industry_county, ref_rast, field = "pct_ag_man", fun = "mean")
+nrow(as.data.frame(id_pct_ag_man.rst))
+
 # Fill NAs with focal
 id_elec_fill <- focal(id_elec.rst, 3, mean, na.policy='only', na.rm = TRUE)
 plot(id_elec_fill)
@@ -238,6 +279,11 @@ nrow(as.data.frame(id_water_fill))
 id_edu_fill <- focal(id_edu.rst, 3, mean, na.policy='only', na.rm = TRUE)
 plot(id_edu_fill)
 nrow(as.data.frame(id_edu_fill))
+
+id_pct_ag_fill <- focal(id_pct_ag.rst, 3, mean, na.policy='only', na.rm = TRUE)
+id_pct_man_fill <- focal(id_pct_man.rst, 3, mean, na.policy='only', na.rm = TRUE)
+id_pct_ag_man_fill <- focal(id_pct_ag_man.rst, 3, mean, na.policy='only', na.rm = TRUE)
+
 
 # Crop to reference raster
 id_elec_fill_crop <- crop(id_elec_fill, ref_rast, mask = TRUE)
@@ -255,6 +301,21 @@ plot(id_edu_fill_crop)
 nrow(as.data.frame(ref_rast))
 nrow(as.data.frame(id_edu_fill_crop))
 
+id_pct_ag_fill_crop <- crop(id_pct_ag_fill, ref_rast, mask = TRUE)
+plot(id_pct_ag_fill_crop)
+nrow(as.data.frame(ref_rast))
+nrow(as.data.frame(id_pct_ag_fill_crop))
+
+id_pct_man_fill_crop <- crop(id_pct_man_fill, ref_rast, mask = TRUE)
+plot(id_pct_man_fill_crop)
+nrow(as.data.frame(ref_rast))
+nrow(as.data.frame(id_pct_man_fill_crop))
+
+id_pct_ag_man_fill_crop <- crop(id_pct_ag_man_fill, ref_rast, mask = TRUE)
+plot(id_pct_ag_man_fill_crop)
+nrow(as.data.frame(ref_rast))
+nrow(as.data.frame(id_pct_ag_man_fill_crop))
+
 # Save the raster
 writeRaster(id_elec_fill_crop, here::here(paste0("data/processed/pct_charged_more_250_month_electricity_2023_id_3km_crop_", 
                                                 Sys.Date(), ".tif")))
@@ -264,6 +325,15 @@ writeRaster(id_water_fill_crop, here::here(paste0("data/processed/pct_charged_mo
 
 writeRaster(id_edu_fill_crop, here::here(paste0("data/processed/pct_over25yo_less_college_2023_id_3km_crop_", 
                                                   Sys.Date(), ".tif")))
+
+writeRaster(id_pct_ag_fill_crop, here::here(paste0("data/processed/pct_ag_industry_2023_id_3km_crop_", 
+                                                Sys.Date(), ".tif")))
+
+writeRaster(id_pct_man_fill_crop, here::here(paste0("data/processed/pct_man_industry_2023_id_3km_crop_", 
+                                                   Sys.Date(), ".tif")))
+
+writeRaster(id_pct_ag_man_fill_crop, here::here(paste0("data/processed/pct_ag_man_industry_2023_id_3km_crop_", 
+                                                    Sys.Date(), ".tif")))
 
 
 
