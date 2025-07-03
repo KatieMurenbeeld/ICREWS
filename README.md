@@ -17,8 +17,8 @@ these packages.
 ### Contributing:
 - If you are open to contributions, provide guidelines for contributing to the project.
 
-### License Information:
-- Include licensing information to indicate how others can use and modify the project.
+### License:
+- [Creative Commons Zero v1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/deed.en)
 
 ## Contact Information:
 - For questions related to the code please email Katie Murenbeeld at 
