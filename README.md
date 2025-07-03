@@ -11,19 +11,17 @@ Please note that this script **will install** any required packages you do not
 currently have. Please make sure that you have permissions to download and use 
 these packages.
 
-### Usage Instructions:
+## Usage Instructions:
 - Provide clear examples of how to use the scripts, templates, or functions included in the repository.
 
-### Contributing:
+## Contributing:
 - If you are open to contributions, provide guidelines for contributing to the project.
 
-### License:
+## License:
 - [Creative Commons Zero v1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/deed.en)
 
 ## Contact Information:
 - For questions related to the code please email Katie Murenbeeld at 
 [katiemurenbeeld@boisestate.edu](mailto:katiemurenbeeld@boisestate.edu)
-
-#### Remember, a well-structured `README.md` improves the usability and collaboration potential of the repository!
 
 
