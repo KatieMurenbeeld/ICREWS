@@ -1,4 +1,4 @@
-# <img src="https://idahocrews.org/wp-content/uploads/2023/12/icrews-logo-final-circle-768x768.png" width="200" height="280">Idaho Community-engaged Resillience in Water-Energy Systems
+# <img src="https://idahocrews.org/wp-content/uploads/2023/12/icrews-logo-final-circle-768x768.png" width="200" height="200">Idaho Community-engaged Resillience in Water-Energy Systems
 repository for ICREWS projects
 
 ## Social-Ecological-Technological Systems Archetypes in Idaho
