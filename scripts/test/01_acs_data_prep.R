@@ -53,9 +53,22 @@ counties_2023 <- counties_2023 %>%
 
 counties_2023_proj <- st_transform(counties_2023, projection)
 
+# Download the census tract data for Idaho. Set the year to 2023
+census_2023 <- tigris::tracts(state = "ID", year = 2023) 
+census_2023 <- census_2023 %>%
+  filter(STATEFP == 16) %>%
+  dplyr::select(GEOID, NAME, geometry)
+census_2023 <- st_transform(census_2023, projection)
+
+census_2023 <- census_2023 %>%
+  mutate(census_area = st_area(census_2023))
+
+census_2023_proj <- st_transform(census_2023, projection)
+
 ## test out using tidycensus
 
-census_api_key("0c67a04e1be4c76930c858ef2c307536f889aff3", install = TRUE)
+census_api_key("0c67a04e1be4c76930c858ef2c307536f889aff3", install = TRUE, 
+               overwrite = TRUE)
 
 # find the keys for the variables you want to use from 2023 five year
 v23 <- load_variables(2023, "acs5", cache = TRUE)
@@ -64,7 +77,7 @@ View(v23)
 
 # test with median age: B01002_001
 
-id_medage <- get_acs(geography = "county", 
+id_medage <- get_acs(geography = "tract", 
               variables = c(medage = "B01002_001"), 
               state = "ID", 
               year = 2023)
@@ -73,7 +86,7 @@ id_medage
 
 # test for monthly electricity costs: B25132_001
 
-id_electric_month <- get_acs(geography = "county", 
+id_electric_month <- get_acs(geography = "tract", 
                              variables = c(total = "B25132_001", 
                                            not_charged = "B25132_002", 
                                            charged = "B25132_003", 
@@ -89,7 +102,7 @@ id_electric_month
 
 # test for annual water and sewer costs: B25134_001
 
-id_water_year <- get_acs(geography = "county", 
+id_water_year <- get_acs(geography = "tract", 
                          variables = c(total = "B25134_001", 
                                        not_charged = "B25134_002", 
                                        charged = "B25134_003", 
@@ -105,7 +118,7 @@ id_water_year
 
 # test for educational attainment ofr age >25 and older: B15003_001 
 
-id_25yo_edu <- get_acs(geography = "county", 
+id_25yo_edu <- get_acs(geography = "tract", 
                          variables = c(total = "B15003_001", 
                                        no_school = "B15003_002", 
                                        nursery = "B15003_003", 
@@ -138,7 +151,7 @@ id_25yo_edu
 # test for % industry not in ag, forestry, hunting/fishing, and mining:
 # C24070
 
-id_industry <- get_acs(geography = "county", 
+id_industry <- get_acs(geography = "tract", 
                              variables = c(total = "C24070_001", 
                                            ag = "C24070_002", 
                                            man = "C24070_004",
@@ -156,11 +169,14 @@ id_industry
 # Median Age is good to go
 medage_proj <- left_join(counties_2023_proj, id_medage,
                            by = "GEOID")
+
+medage_tract_proj <- left_join(census_2023_proj, id_medage,
+                         by = "GEOID")
 # update the projection
 #medage_proj <- st_transform(medage_county, projection)
 
 # Rasterize using the reference raster
-medage.rst <- rasterize(medage_proj, ref_rast, field = "estimate", fun = "mean")
+medage.rst <- rasterize(medage_tract_proj, ref_rast, field = "estimate", fun = "mean")
 nrow(as.data.frame(medage.rst))
 
 # Fill NAs with focal
@@ -175,7 +191,7 @@ nrow(as.data.frame(ref_rast))
 nrow(as.data.frame(medage_fill_crop))
 
 # Save the raster
-writeRaster(medage_fill_crop, here::here(paste0("data/processed/median_age_2023_id_3km_crop_", 
+writeRaster(medage_fill_crop, here::here(paste0("data/processed/median_age_tract_2023_id_3km_crop_", 
                                                 Sys.Date(), ".tif")))
 
 
