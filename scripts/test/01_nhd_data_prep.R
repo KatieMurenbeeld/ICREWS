@@ -58,3 +58,7 @@ nrow(as.data.frame(ref_rast))
 # Convert to km
 test1_dist_crop$river_dist_km <- test1_dist_crop$layer / 1000
 plot(test1_dist_crop$river_dist_km)
+
+# Save the Raster
+writeRaster(test1_dist_crop, here::here(paste0("data/processed/dist_river_500k_vis_2023_id_3km_crop_", 
+                                                       Sys.Date(), ".tif")))
